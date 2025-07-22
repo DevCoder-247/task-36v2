@@ -1,5 +1,7 @@
 const express = require('express');
 const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const File = require('../models/File');
 const router = express.Router();
 
@@ -33,6 +35,26 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     res.status(201).json(newFile);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+
+router.get('/files/:filename', (req, res) => {
+  try {
+    const safeFilename = req.params.filename.replace(/[^a-zA-Z0-9\-_.]/g, '');
+    const filePath = path.join(__dirname, '../uploads', safeFilename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    res.sendFile(filePath, {
+      headers: {
+        'Content-Disposition': `inline; filename="${safeFilename}"`
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
