@@ -5,7 +5,12 @@ const fs = require('fs');
 const File = require('../models/File');
 const router = express.Router();
 
-// Multer configuration
+
+const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -17,7 +22,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Upload file
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
@@ -41,24 +45,38 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
 router.get('/files/:filename', (req, res) => {
   try {
-    const safeFilename = req.params.filename.replace(/[^a-zA-Z0-9\-_.]/g, '');
-    const filePath = path.join(__dirname, '../uploads', safeFilename);
+
+    const decodedFilename = decodeURIComponent(req.params.filename);
+    const safeFilename = decodedFilename.replace(/[^a-zA-Z0-9\-_.]/g, '');
     
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-    
-    res.sendFile(filePath, {
-      headers: {
-        'Content-Disposition': `inline; filename="${safeFilename}"`
-      }
-    });
+
+    File.findOne({ filename: decodedFilename })
+      .then(file => {
+        if (!file) {
+          return res.status(404).json({ error: 'File not found in database' });
+        }
+        
+        const filePath = path.join(__dirname, '..', file.path);
+        
+        if (!fs.existsSync(filePath)) {
+          return res.status(404).json({ error: 'File not found on server' });
+        }
+        
+        res.sendFile(filePath, {
+          headers: {
+            'Content-Disposition': `inline; filename="${file.filename}"`
+          }
+        });
+      })
+      .catch(err => {
+        res.status(500).json({ error: err.message });
+      });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Get all files
+
 router.get('/files', async (req, res) => {
   try {
     const files = await File.find().sort({ uploadDate: -1 });
