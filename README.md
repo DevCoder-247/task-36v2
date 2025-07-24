@@ -2,7 +2,7 @@
 
 ## 🌐 Live Links
 
-- 🔗 **Frontend (Vercel):** [https://task-36v2-abhays-projects-596787af.vercel.app/](https://task-36v2-abhays-projects-596787af.vercel.app/)
+- 🔗 **Frontend (Vercel):** [https://task-36v2.vercel.app/](https://task-36v2.vercel.app/)
 - 🔗 **Backend (Render):** [https://task-36v2.onrender.com/](https://task-36v2.onrender.com/)
 
 ## 📦 GitHub Repository
