@@ -25,14 +25,12 @@ const FileList = () => {
 
 
 const openFile = (file) => {
-  if (!file?.filename) {
-    console.error('Filename missing:', file);
+  if (!file?._id) {
+    console.error('File ID missing:', file);
     return;
   }
   
-
-  const encodedFilename = encodeURIComponent(file.filename);
-  const fileUrl = `${import.meta.env.VITE_API_URL}/api/files/${encodedFilename}`;
+  const fileUrl = `${import.meta.env.VITE_API_URL}/api/files/${file._id}`;
   
   if (file.mimetype?.startsWith('image/') || file.mimetype === 'application/pdf') {
     window.open(fileUrl, '_blank');
@@ -74,7 +72,7 @@ const openFile = (file) => {
                 <td>{file.uploadDate ? new Date(file.uploadDate).toLocaleString() : 'N/A'}</td>
                 <td>
                   {file.path && (
-                    <button 
+                    <button
                       onClick={() => openFile(file)}
                       className="file-open-button"
                     >

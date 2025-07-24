@@ -22,15 +22,19 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+// In fileRoutes.js upload route
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
+    // Store absolute path
+    const absolutePath = path.resolve(req.file.path);
+    
     const newFile = new File({
       filename: req.file.originalname,
-      path: req.file.path,
+      path: absolutePath, // Store absolute path
       size: req.file.size,
       mimetype: req.file.mimetype
     });
@@ -43,35 +47,29 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 });
 
 
-router.get('/files/:filename', (req, res) => {
+// In fileRoutes.js
+router.get('/files/:id', async (req, res) => {
   try {
+    const file = await File.findById(req.params.id);
+    if (!file) {
+      return res.status(404).json({ error: 'File not found in database' });
+    }
 
-    const decodedFilename = decodeURIComponent(req.params.filename);
-    const safeFilename = decodedFilename.replace(/[^a-zA-Z0-9\-_.]/g, '');
-    
+    const absolutePath = path.resolve(file.path);
+    console.log('Attempting to serve file from:', absolutePath); // Debug log
 
-    File.findOne({ filename: decodedFilename })
-      .then(file => {
-        if (!file) {
-          return res.status(404).json({ error: 'File not found in database' });
-        }
-        
-        const filePath = path.join(__dirname, '..', file.path);
-        
-        if (!fs.existsSync(filePath)) {
-          return res.status(404).json({ error: 'File not found on server' });
-        }
-        
-        res.sendFile(filePath, {
-          headers: {
-            'Content-Disposition': `inline; filename="${file.filename}"`
-          }
-        });
-      })
-      .catch(err => {
-        res.status(500).json({ error: err.message });
-      });
+    if (!fs.existsSync(absolutePath)) {
+      console.error('File not found at path:', absolutePath);
+      return res.status(404).json({ error: 'File not found on server' });
+    }
+
+    res.sendFile(absolutePath, {
+      headers: {
+        'Content-Disposition': `inline; filename="${file.filename}"`
+      }
+    });
   } catch (err) {
+    console.error('File retrieval error:', err);
     res.status(500).json({ error: err.message });
   }
 });
